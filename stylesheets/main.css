@@ -84,3 +84,8 @@ input {
 .desc {
   text-transform: capitalize;
 }
+.chart {
+  width: 100%;
+  height: 400px;
+  margin-top: 1em;
+}
