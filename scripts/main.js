@@ -5,7 +5,12 @@ $(function(){
 	var iconUrl = "http://openweathermap.org/img/w/";
 	
 	//date info
-	var d = new Date();
+	var date = new Date();
+	var year;
+	var month;
+	var day;
+	var currentDay;
+	var lastDay;
 	var monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 	var days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 	
@@ -79,36 +84,26 @@ $(function(){
 		}
 	}
 	
-	function showForecast(forecast) {
-		$.each(forecast, function(i,v){
-			$('<div />', {
-				"id": "forecastItem" + i,
-        "class": 'forecast-item',
-        }).appendTo(forecastContainer);
-			addDate(i);
-			addDesc(i,v);
-			addIcon(i,v);
-			addTemperature(i,v);
-		});
-		avgPressure(forecast);
-		cityInput.val('');
+	function getDate() {
+		year = date.getYear();
+		month = date.getMonth();
+		day = date.getDay();
+		currentDay = date.getDate();
+		lastDay = new Date((new Date(year , month , 1)) -1 );
+		
+		if (date === lastDay) {
+			month = date.getMonth() + 1;
+			currentDay = 1;
+		} else {
+			currentDay = date.getDate();
+			date.setDate(date.getDate() + 1);
+		}
+		return {
+			day, currentDay, month
+		}
 	}
 	
 	function addDate(i) {
-		var year = d.getYear();
-		var month = d.getMonth();
-		var day = d.getDay();
-		var currentDay = d.getDate();
-		var lastDay = new Date((new Date(year , month , 1)) -1 );
-		
-		if (d === lastDay) {
-			month = d.getMonth() + 1;
-			currentDay = 1;
-		} else {
-			currentDay = d.getDate();
-			d.setDate(d.getDate() + 1);
-		}
-		
 		$('<div />', {
         "class": 'date',
         html: "<div>" + days[day] + "</div>" + monthNames[month] + " " + currentDay
@@ -138,10 +133,42 @@ $(function(){
 		}).appendTo(document.getElementById("temperatureInfo"+[i]));
 	}
 	
+	function showForecast(forecast) {
+		getWeeklyMinTemperatures(forecast);
+		getWeeklyMaxTemperatures(forecast);
+		avgPressure(forecast);
+		$.each(forecast, function(i,v){
+			$('<div />', {
+				"id": "forecastItem" + i,
+        "class": 'forecast-item',
+        }).appendTo(forecastContainer);
+			getDate();
+			addDate(i);
+			addDesc(i,v);
+			addIcon(i,v);
+			addTemperature(i,v);
+		});
+		buildChart();
+		cityInput.val('');
+	}
+	
 	function errorFunc(e) {
 		console.log(e);
 	}
 	
+	var maxTemperatureArray = [];
+	function getWeeklyMaxTemperatures(forecast){
+		for (item in forecast) {
+			maxTemperatureArray.push(forecast[item].temp.max);
+		}
+	}
+	var minTemperatureArray = [];
+	function getWeeklyMinTemperatures(forecast){
+		for (item in forecast) {
+			minTemperatureArray.push(forecast[item].temp.min);
+		}
+	}
+
 	function avgPressure(forecast) {
 		var pressureArray = [];
 		var avgPressureValue = 0;
@@ -167,10 +194,17 @@ $(function(){
 		}
 		searchCurrentWeatherByCity(cityInput.val());
 		searchForecastByCity(cityInput.val());
-		d = new Date();
-		currentDay = d.getDate();
+		resets();
 	});
 	
+	function resets() {
+		dateArray = [];
+		temperatureArray = [];
+		d = new Date();
+		currentDay = d.getDate();
+	}
+	
+	//Events
 	cityInput.on('keypress', function(evt) {
 		if (evt.keyCode == 13 ) {
 			event.preventDefault();
@@ -180,27 +214,42 @@ $(function(){
 	
 	cityInput.focus();
 	
-	$('#container').highcharts({
-        chart: {
-            type: 'bar'
-        },
-        title: {
-            text: 'Fruit Consumption'
-        },
-        xAxis: {
-            categories: ['Apples', 'Bananas', 'Oranges']
-        },
-        yAxis: {
-            title: {
-                text: 'Fruit eaten'
+	//Charting of temperature for the day
+	function buildChart() {
+		var dateArray = [];
+		for (var i = 0; i < 7; i++) {
+			dateArray.push(days[getDate().day]);
+		}
+		$('#container').highcharts({
+				chart: {
+						type: 'line'
+				},
+				title: {
+						text: 'Daily Max Temperatures'
+				},
+				xAxis: {
+						categories: dateArray
+				},
+				yAxis: {
+						title: {
+								text: 'Temperature(°C)'
+						}
+				},
+				plotOptions: {
+            line: {
+                dataLabels: {
+                    enabled: true
+                },
+                enableMouseTracking: false
             }
         },
-        series: [{
-            name: 'Jane',
-            data: [1, 0, 4]
-        }, {
-            name: 'John',
-            data: [5, 7, 3]
-        }]
-    });
+				series: [{
+						name: 'Max Temperature',
+						data: maxTemperatureArray
+				},{
+						name: 'Min Temperature',
+						data: minTemperatureArray
+				}]
+		});
+	}
 });
