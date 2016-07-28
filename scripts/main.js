@@ -225,7 +225,7 @@ $(function(){
 						type: 'line'
 				},
 				title: {
-						text: 'Daily Max Temperatures'
+						text: 'Daily Min/Max Temperatures'
 				},
 				xAxis: {
 						categories: dateArray
@@ -239,8 +239,7 @@ $(function(){
             line: {
                 dataLabels: {
                     enabled: true
-                },
-                enableMouseTracking: false
+                }
             }
         },
 				series: [{
@@ -252,4 +251,5 @@ $(function(){
 				}]
 		});
 	}
+
 });
